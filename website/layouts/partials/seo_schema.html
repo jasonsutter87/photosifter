@@ -4,7 +4,7 @@
   {{ $title = .Params.PageTitle }}
 {{ end }}
 {{ $description := .Description | default .Site.Params.description | default .Summary }}
-{{ $image := .Params.image | default "/images/og-image.png" }}
+{{ $image := .Params.image | default "/images/share-image.jpg" }}
 
 <meta name="title" content="{{ $title }}">
 <meta name="description" content="{{ $description }}">
