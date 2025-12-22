@@ -2,6 +2,11 @@ baseURL = 'https://photosifter.com/'
 languageCode = 'en-us'
 title = 'PhotoSifter'
 
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
 [params]
 CompanyName = 'PhotoSifter'
 tagline = 'Smart Photo Deduplication & Organization'
