@@ -44,7 +44,7 @@ You may NOT:
 
 ## Intellectual Property
 
-PhotoSifter and all associated materials are owned by ZTAS.io. The software is protected by copyright and other intellectual property laws.
+PhotoSifter and all associated materials are the property of PhotoSifter. The software is protected by copyright and other intellectual property laws.
 
 ## Disclaimer of Warranties
 
@@ -57,7 +57,7 @@ PhotoSifter is provided "AS IS" without warranty of any kind. We do not guarante
 
 ## Limitation of Liability
 
-To the maximum extent permitted by law, ZTAS.io shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of PhotoSifter.
+To the maximum extent permitted by law, PhotoSifter shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of PhotoSifter.
 
 Our total liability shall not exceed the amount you paid for the software (if any).
 

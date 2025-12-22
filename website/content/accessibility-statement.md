@@ -17,7 +17,7 @@ layout: "single"
 
 ## Our Commitment
 
-ZTAS.io is committed to ensuring PhotoSifter is accessible to all users, including those with disabilities. We strive to meet WCAG 2.1 Level AA standards.
+PhotoSifter is committed to ensuring our software is accessible to all users, including those with disabilities. We strive to meet WCAG 2.1 Level AA standards.
 
 ## Website Accessibility
 
