@@ -1,0 +1,52 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  {{ block "title" . }}
+    {{ if .Params.PageTitle}}
+      {{ .Params.PageTitle }}
+    {{ else }}
+      {{ .Params.Title }}
+    {{ end }}
+  {{ end }}
+</title>
+
+<!-- SEO Meta Tags -->
+{{ partial "seo_schema" . }}
+
+<!-- Performance: DNS prefetch for external resources -->
+<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+<!-- Favicon -->
+<link rel="apple-touch-icon" href="{{ "apple-touch-icon.png" | relURL }}" sizes="180x180">
+<link rel="icon" href="{{ "favicon-32x32.png" | relURL }}" sizes="32x32" type="image/png">
+<link rel="icon" href="{{ "favicon-16x16.png" | relURL }}" sizes="16x16" type="image/png">
+<link rel="icon" href="{{ "favicon.ico" | relURL }}">
+<meta name="theme-color" content="#2563eb">
+
+<!-- CSS - Critical styles inline, rest deferred -->
+<link rel="stylesheet" href="{{ "css/main.css" | relURL }}">
+{{ range .Params.css }}
+  <link rel="stylesheet" href="{{ "css/pages/" | relURL }}{{ . }}">
+{{ end }}
+
+<!-- Canonical URL -->
+{{ if not .Params.canonical }}
+  <link rel="canonical" href="{{ .Permalink }}">
+{{ end }}
+
+<!-- Fonts - Optimized loading with font-display: swap -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Accessibility: Reduced motion preference -->
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>

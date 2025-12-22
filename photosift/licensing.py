@@ -1,4 +1,4 @@
-"""Licensing and freemium logic for PhotoSift."""
+"""Licensing and freemium logic for PhotoSifter."""
 
 import os
 import json
@@ -8,8 +8,8 @@ from pathlib import Path
 from datetime import datetime
 
 
-FREE_TIER_LIMIT = 1000  # Photos
-APP_NAME = "PhotoSift"
+FREE_TIER_LIMIT = 150  # Photos
+APP_NAME = "PhotoSifter"
 
 
 def get_app_data_dir() -> Path:
@@ -89,27 +89,20 @@ class LicenseManager:
         """
         Validate a license key.
 
-        In production, this would:
-        1. Check format
-        2. Verify signature
-        3. Optionally ping a license server
-
-        For now, we use a simple format: PHOTOSIFT-XXXX-XXXX-XXXX
+        Accepts LemonSqueezy format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+        (UUID-like format with alphanumeric characters)
         """
         if not key:
             return False
 
-        # Simple format check
+        # LemonSqueezy format: 8-4-4-4-12 (like UUID but alphanumeric)
         parts = key.split("-")
-        if len(parts) != 4:
+        if len(parts) != 5:
             return False
 
-        if parts[0] != "PHOTOSIFT":
-            return False
-
-        # Each part after prefix should be 4 alphanumeric chars
-        for part in parts[1:]:
-            if len(part) != 4 or not part.isalnum():
+        expected_lengths = [8, 4, 4, 4, 12]
+        for part, expected_len in zip(parts, expected_lengths):
+            if len(part) != expected_len or not part.isalnum():
                 return False
 
         return True

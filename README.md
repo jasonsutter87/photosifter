@@ -1,4 +1,4 @@
-# PhotoSift
+# PhotoSifter
 
 Smart photo deduplication and organization.
 
@@ -8,7 +8,7 @@ Smart photo deduplication and organization.
 - Identify exact duplicates using SHA256 hashing
 - Organize photos by date (YYYY/MM folder structure)
 - Move duplicates to a separate folder for review
-- Freemium model: 1,000 photos free, then requires license
+- Freemium model: 150 photos free, then requires license
 
 ## Setup (Development)
 
@@ -40,11 +40,11 @@ chmod +x build.sh
 ./build.sh
 ```
 
-The executable will be in `dist/PhotoSift.exe` (Windows) or `dist/PhotoSift` (Linux/Mac).
+The executable will be in `dist/PhotoSifter.exe` (Windows) or `dist/PhotoSifter` (Linux/Mac).
 
 ## License Key Format
 
-`PHOTOSIFT-XXXX-XXXX-XXXX`
+`XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX` (provided by LemonSqueezy after purchase)
 
 ## Project Structure
 

@@ -45,7 +45,7 @@ class ScanResult:
         return sum(f.size for f in self.duplicates)
 
 
-class PhotoSiftEngine:
+class PhotoSifterEngine:
     """Core engine for scanning, deduplicating, and organizing photos."""
 
     def __init__(self):

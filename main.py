@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PhotoSift - Smart photo deduplication and organization."""
+"""PhotoSifter - Smart photo deduplication and organization."""
 
 from photosift.gui import run
 

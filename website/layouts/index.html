@@ -1,0 +1,165 @@
+{{ define "main" }}
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white py-16 md:py-24" aria-labelledby="hero-heading">
+    <div class="container mx-auto px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h1 id="hero-heading" class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Reclaim Your Photo Library
+          </h1>
+          <p class="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed">
+            Find and remove duplicate photos in seconds. Organize thousands of images automatically by date.
+          </p>
+          <div class="flex flex-row gap-4 mb-6">
+            <a href="#download" class="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+              Download Free
+            </a>
+            <a href="#features" class="inline-block border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-600 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors">
+              Learn More
+            </a>
+          </div>
+          <p class="text-blue-200">
+            Free for up to 150 photos. No account required.
+          </p>
+        </div>
+        <div class="hidden lg:block" role="img" aria-label="PhotoSifter application screenshot">
+          <div class="bg-white/10 backdrop-blur rounded-2xl p-8 text-center shadow-2xl">
+            <div class="text-7xl mb-4" aria-hidden="true">📸</div>
+            <p class="text-xl text-blue-100">App screenshot placeholder</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-16 md:py-24 bg-white" aria-labelledby="features-heading">
+    <div class="container mx-auto px-6 lg:px-8">
+      <h2 id="features-heading" class="text-3xl md:text-4xl font-bold text-center mb-16 text-gray-800">
+        Why PhotoSifter?
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="text-center">
+          <div class="text-5xl mb-6" aria-hidden="true">🔍</div>
+          <h3 class="text-xl font-bold mb-4 text-gray-800">Find Duplicates Instantly</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Uses SHA256 hashing to identify exact duplicates. Scan thousands of photos in seconds.
+          </p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-6" aria-hidden="true">📁</div>
+          <h3 class="text-xl font-bold mb-4 text-gray-800">Auto-Organize by Date</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Automatically sort photos into YYYY/MM folder structure. No more messy photo folders.
+          </p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-6" aria-hidden="true">🔒</div>
+          <h3 class="text-xl font-bold mb-4 text-gray-800">100% Private</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Runs entirely on your computer. Your photos never leave your device.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="py-16 md:py-24 bg-gray-50" aria-labelledby="pricing-heading">
+    <div class="container mx-auto px-6 lg:px-8">
+      <h2 id="pricing-heading" class="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-800">
+        Simple Pricing
+      </h2>
+      <p class="text-center text-gray-600 mb-16 text-lg">
+        Start free. Upgrade when you need more.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Free Plan -->
+        <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-sm">
+          <h3 class="text-2xl font-bold mb-2 text-gray-800">Free</h3>
+          <p class="text-5xl font-bold mb-6 text-gray-800">$0</p>
+          <ul class="space-y-4 mb-8 text-gray-600">
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Up to 150 photos</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Find exact duplicates</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Organize by date</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>No account required</span>
+            </li>
+          </ul>
+          <a href="#download" class="block text-center border-2 border-blue-600 text-blue-600 px-6 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-600 focus:ring-opacity-30 transition-colors">
+            Download Free
+          </a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="bg-blue-50 border-2 border-blue-600 rounded-2xl p-8 shadow-lg relative">
+          <span class="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-full">BEST VALUE</span>
+          <h3 class="text-2xl font-bold mb-2 text-gray-800 mt-2">Pro License</h3>
+          <p class="text-5xl font-bold mb-2 text-gray-800">$19</p>
+          <p class="text-gray-500 mb-6">one-time payment</p>
+          <ul class="space-y-4 mb-8 text-gray-600">
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span><strong class="text-gray-800">Unlimited</strong> photos</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Find exact duplicates</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Organize by date</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Priority support</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="text-green-500 text-xl" aria-hidden="true">✓</span>
+              <span>Lifetime updates</span>
+            </li>
+          </ul>
+          <a href="{{ .Site.Params.lemonSqueezyUrl | default "#buy" }}" class="block text-center bg-blue-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-600 focus:ring-opacity-50 transition-colors shadow-lg">
+            Buy License
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section -->
+  <section id="download" class="py-16 md:py-24 bg-gray-900 text-white" aria-labelledby="download-heading">
+    <div class="container mx-auto px-6 lg:px-8 text-center">
+      <h2 id="download-heading" class="text-3xl md:text-4xl font-bold mb-6">
+        Ready to Clean Up Your Photos?
+      </h2>
+      <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+        Download PhotoSifter and start organizing in minutes.
+      </p>
+      <div class="flex flex-row gap-6 justify-center">
+        <a href="#" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+          <span class="text-2xl" aria-hidden="true">🪟</span>
+          <span>Windows</span>
+        </a>
+        <a href="#" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+          <span class="text-2xl" aria-hidden="true">🍎</span>
+          <span>macOS</span>
+        </a>
+      </div>
+      <p class="mt-8 text-gray-400">
+        Works on Windows 10+ and macOS 11+
+      </p>
+    </div>
+  </section>
+{{ end }}

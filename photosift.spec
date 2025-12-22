@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec file for PhotoSift."""
+"""PyInstaller spec file for PhotoSifter."""
 
 import sys
 from pathlib import Path
@@ -43,7 +43,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='PhotoSift',
+    name='PhotoSifter',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,4 +1,4 @@
-"""PhotoSift GUI using CustomTkinter."""
+"""PhotoSifter GUI using CustomTkinter."""
 
 import threading
 from pathlib import Path
@@ -6,7 +6,7 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 
 from . import __version__, __app_name__
-from .engine import PhotoSiftEngine, ScanResult, format_size
+from .engine import PhotoSifterEngine, ScanResult, format_size
 from .licensing import LicenseManager, FREE_TIER_LIMIT
 
 
@@ -15,7 +15,7 @@ ctk.set_appearance_mode("system")  # "light", "dark", or "system"
 ctk.set_default_color_theme("blue")
 
 
-class PhotoSiftApp(ctk.CTk):
+class PhotoSifterApp(ctk.CTk):
     """Main application window."""
 
     def __init__(self):
@@ -26,7 +26,7 @@ class PhotoSiftApp(ctk.CTk):
         self.minsize(700, 500)
 
         # Initialize components
-        self.engine = PhotoSiftEngine()
+        self.engine = PhotoSifterEngine()
         self.license_manager = LicenseManager()
         self.scan_result: ScanResult | None = None
         self.source_folders: list[Path] = []
@@ -589,7 +589,7 @@ class PhotoSiftApp(ctk.CTk):
         result = messagebox.askyesno(
             "Free Tier Limit Reached",
             f"You've processed {FREE_TIER_LIMIT:,} photos with the free version.\n\n"
-            "Upgrade to PhotoSift Pro for unlimited photo organization!\n\n"
+            "Upgrade to PhotoSifter Pro for unlimited photo organization!\n\n"
             "Would you like to enter a license key?"
         )
         if result:
@@ -633,7 +633,7 @@ class LicenseDialog(ctk.CTkToplevel):
         # License key entry
         ctk.CTkLabel(self, text="Enter license key:").grid(row=2, column=0, pady=(0, 5))
 
-        self.key_entry = ctk.CTkEntry(self, width=300, placeholder_text="PHOTOSIFT-XXXX-XXXX-XXXX")
+        self.key_entry = ctk.CTkEntry(self, width=350, placeholder_text="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
         self.key_entry.grid(row=3, column=0, pady=(0, 10))
 
         # Buttons
@@ -656,7 +656,7 @@ class LicenseDialog(ctk.CTkToplevel):
         # Buy link
         ctk.CTkLabel(
             self,
-            text="Get a license at photosift.app",
+            text="Get a license at photosifter.com",
             text_color="gray",
             font=ctk.CTkFont(size=12)
         ).grid(row=5, column=0, pady=(0, 10))
@@ -679,6 +679,6 @@ class LicenseDialog(ctk.CTkToplevel):
 
 
 def run():
-    """Run the PhotoSift application."""
-    app = PhotoSiftApp()
+    """Run the PhotoSifter application."""
+    app = PhotoSifterApp()
     app.mainloop()

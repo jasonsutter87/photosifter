@@ -1,4 +1,4 @@
-name: Build PhotoSift
+name: Build PhotoSifter
 
 on:
   push:
@@ -35,8 +35,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PhotoSift-Windows
-          path: dist/PhotoSift.exe
+          name: PhotoSifter-Windows
+          path: dist/PhotoSifter.exe
           retention-days: 30
 
   build-linux:
@@ -64,8 +64,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PhotoSift-Linux
-          path: dist/PhotoSift
+          name: PhotoSifter-Linux
+          path: dist/PhotoSifter
           retention-days: 30
 
   build-macos:
@@ -93,8 +93,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PhotoSift-macOS
-          path: dist/PhotoSift
+          name: PhotoSifter-macOS
+          path: dist/PhotoSifter
           retention-days: 30
 
   # Create release when a tag is pushed
@@ -107,35 +107,35 @@ jobs:
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: PhotoSift-Windows
+          name: PhotoSifter-Windows
           path: windows
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: PhotoSift-Linux
+          name: PhotoSifter-Linux
           path: linux
 
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: PhotoSift-macOS
+          name: PhotoSifter-macOS
           path: macos
 
       - name: Prepare release files
         run: |
-          mv windows/PhotoSift.exe PhotoSift-Windows.exe
-          mv linux/PhotoSift PhotoSift-Linux
-          mv macos/PhotoSift PhotoSift-macOS
-          chmod +x PhotoSift-Linux PhotoSift-macOS
+          mv windows/PhotoSifter.exe PhotoSifter-Windows.exe
+          mv linux/PhotoSifter PhotoSifter-Linux
+          mv macos/PhotoSifter PhotoSifter-macOS
+          chmod +x PhotoSifter-Linux PhotoSifter-macOS
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            PhotoSift-Windows.exe
-            PhotoSift-Linux
-            PhotoSift-macOS
+            PhotoSifter-Windows.exe
+            PhotoSifter-Linux
+            PhotoSifter-macOS
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

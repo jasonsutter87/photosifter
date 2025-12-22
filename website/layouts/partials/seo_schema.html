@@ -1,0 +1,64 @@
+<!-- Primary Meta Tags -->
+{{ $title := .Title }}
+{{ if .Params.PageTitle }}
+  {{ $title = .Params.PageTitle }}
+{{ end }}
+{{ $description := .Description | default .Site.Params.description | default .Summary }}
+{{ $image := .Params.image | default "/images/og-image.png" }}
+
+<meta name="title" content="{{ $title }}">
+<meta name="description" content="{{ $description }}">
+<meta name="author" content="{{ .Site.Params.CompanyName }}">
+<meta name="keywords" content="PhotoSifter, photo deduplication, duplicate photos, organize photos, photo organizer, remove duplicates, photo management">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="{{ if eq .Section "blog" }}article{{ else }}website{{ end }}">
+<meta property="og:url" content="{{ .Permalink }}">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
+<meta property="og:image" content="{{ $.Site.BaseURL }}{{ $image }}">
+<meta property="og:site_name" content="{{ .Site.Title }}">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="{{ .Permalink }}">
+<meta name="twitter:title" content="{{ $title }}">
+<meta name="twitter:description" content="{{ $description }}">
+<meta name="twitter:image" content="{{ $.Site.BaseURL }}{{ $image }}">
+
+<!-- Robots -->
+{{ if or .Params.noIndex (eq hugo.Environment "development") }}
+<meta name="robots" content="noindex, nofollow">
+{{ else }}
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+{{ end }}
+
+<!-- Structured Data - Software Application -->
+{{ if .IsHome }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "{{ .Site.Title }}",
+  "description": "{{ $description }}",
+  "url": "{{ .Site.BaseURL }}",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10+, macOS 11+",
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Free",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    {
+      "@type": "Offer",
+      "name": "Pro License",
+      "price": "19",
+      "priceCurrency": "USD"
+    }
+  ]
+}
+</script>
+{{ end }}

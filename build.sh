@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build PhotoSift for distribution
+# Build PhotoSifter for distribution
 
 set -e
 
@@ -10,4 +10,4 @@ pip install pyinstaller
 echo "Building executable..."
 pyinstaller photosift.spec --clean
 
-echo "Done! Executable is in dist/PhotoSift"
+echo "Done! Executable is in dist/PhotoSifter"
