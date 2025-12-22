@@ -10,6 +10,11 @@ repoName = 'photosifter'
 # Paste your LemonSqueezy checkout URL here:
 lemonSqueezyUrl = 'https://photoshifter.lemonsqueezy.com/buy/351d48c6-a3aa-4334-aca4-9eb7f7059e09'
 
+# Download links (GitHub releases, etc.)
+downloadWindows = ''
+downloadMac = ''
+downloadLinux = ''
+
 [environments.development]
 baseURL = 'http://localhost:1313/'
 

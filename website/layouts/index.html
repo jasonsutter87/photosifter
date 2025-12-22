@@ -147,18 +147,22 @@
       <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
         Download PhotoSifter and start organizing in minutes.
       </p>
-      <div class="flex flex-row gap-6 justify-center">
-        <a href="#" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+      <div class="flex flex-row gap-6 justify-center flex-wrap">
+        <a href="{{ .Site.Params.downloadWindows | default "#download" }}" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
           <span class="text-2xl" aria-hidden="true">🪟</span>
           <span>Windows</span>
         </a>
-        <a href="#" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+        <a href="{{ .Site.Params.downloadMac | default "#download" }}" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
           <span class="text-2xl" aria-hidden="true">🍎</span>
           <span>macOS</span>
         </a>
+        <a href="{{ .Site.Params.downloadLinux | default "#download" }}" class="inline-flex items-center gap-3 bg-white text-gray-800 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-colors shadow-lg">
+          <span class="text-2xl" aria-hidden="true">🐧</span>
+          <span>Linux</span>
+        </a>
       </div>
       <p class="mt-8 text-gray-400">
-        Works on Windows 10+ and macOS 11+
+        Windows 10+ · macOS 11+ · Linux
       </p>
     </div>
   </section>
