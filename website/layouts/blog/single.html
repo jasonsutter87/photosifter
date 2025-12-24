@@ -1,0 +1,30 @@
+{{ define "main" }}
+  <article class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-3xl">
+      <header class="mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6 text-gray-800 leading-tight">{{ .Title }}</h1>
+        <div class="flex items-center gap-4 text-gray-500">
+          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+          <span>{{ .ReadingTime }} min read</span>
+        </div>
+      </header>
+
+      <div class="prose prose-lg prose-gray max-w-none">
+        {{ .Content }}
+      </div>
+
+      <!-- CTA Section -->
+      <div class="mt-16 p-8 bg-blue-50 rounded-2xl text-center">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Ready to clean up your photos?</h2>
+        <p class="text-gray-600 mb-6">Try PhotoSifter free with up to 150 photos. No account required.</p>
+        <a href="/#download" class="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg">
+          Download Free
+        </a>
+      </div>
+
+      <nav class="mt-12 pt-8 border-t border-gray-200">
+        <a href="/blog/" class="text-blue-600 hover:text-blue-800 font-medium">&larr; Back to Blog</a>
+      </nav>
+    </div>
+  </article>
+{{ end }}
