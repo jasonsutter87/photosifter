@@ -4,10 +4,14 @@ import threading
 from pathlib import Path
 from tkinter import filedialog, messagebox
 import customtkinter as ctk
+from PIL import Image, ImageTk
 
 from . import __version__, __app_name__
-from .engine import PhotoSifterEngine, ScanResult, format_size
+from .engine import PhotoSifterEngine, ScanResult, DuplicateGroup, format_size, PHOTO_EXTS
 from .licensing import LicenseManager, FREE_TIER_LIMIT
+
+# Thumbnail settings
+THUMBNAIL_SIZE = (120, 120)
 
 
 # Set appearance
@@ -32,6 +36,11 @@ class PhotoSifterApp(ctk.CTk):
         self.source_folders: list[Path] = []
         self.destination_folder: Path | None = None
         self.duplicates_folder: Path | None = None
+
+        # Smart mode state
+        self.smart_mode_var = ctk.BooleanVar(value=True)  # Smart mode is default
+        self.current_group_index = 0  # For navigating duplicate groups
+        self.thumbnail_cache: dict[str, ImageTk.PhotoImage] = {}  # Cache thumbnails
 
         # Build UI
         self._create_ui()
@@ -93,12 +102,14 @@ class PhotoSifterApp(ctk.CTk):
 
         # Add tabs
         self.tab_scan = self.tabview.add("1. Select Folders")
-        self.tab_review = self.tabview.add("2. Review")
-        self.tab_organize = self.tabview.add("3. Organize")
+        self.tab_review = self.tabview.add("2. Review Duplicates")
+        self.tab_organize = self.tabview.add("3. Process")
+        self.tab_manage = self.tabview.add("4. Manage Review")
 
         self._create_scan_tab()
         self._create_review_tab()
         self._create_organize_tab()
+        self._create_manage_tab()
 
     def _create_scan_tab(self):
         """Create the folder selection and scan tab."""
@@ -174,6 +185,48 @@ class PhotoSifterApp(ctk.CTk):
             command=self._select_duplicates_folder
         ).grid(row=5, column=0, sticky="w", padx=10, pady=(0, 10))
 
+        # Mode selection frame
+        mode_frame = ctk.CTkFrame(tab)
+        mode_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Scan Mode",
+            font=ctk.CTkFont(weight="bold")
+        ).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 5))
+
+        # Smart mode (default)
+        smart_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Smart Mode (recommended)",
+            variable=self.smart_mode_var,
+            value=True
+        )
+        smart_radio.grid(row=1, column=0, sticky="w", padx=20, pady=2)
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Keep originals in place, move only duplicates to review folder",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).grid(row=2, column=0, sticky="w", padx=40, pady=(0, 5))
+
+        # Classic mode
+        classic_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Classic Mode",
+            variable=self.smart_mode_var,
+            value=False
+        )
+        classic_radio.grid(row=3, column=0, sticky="w", padx=20, pady=2)
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Organize all files by date (YYYY/MM) and move duplicates",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).grid(row=4, column=0, sticky="w", padx=40, pady=(0, 10))
+
         # Scan button
         self.scan_btn = ctk.CTkButton(
             tab,
@@ -182,13 +235,13 @@ class PhotoSifterApp(ctk.CTk):
             font=ctk.CTkFont(size=16, weight="bold"),
             command=self._start_scan
         )
-        self.scan_btn.grid(row=2, column=0, pady=20)
+        self.scan_btn.grid(row=3, column=0, pady=20)
 
     def _create_review_tab(self):
-        """Create the review tab showing scan results."""
+        """Create the review tab with duplicate group viewer."""
         tab = self.tab_review
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(1, weight=1)
+        tab.grid_rowconfigure(2, weight=1)
 
         # Summary frame
         self.summary_frame = ctk.CTkFrame(tab)
@@ -200,7 +253,7 @@ class PhotoSifterApp(ctk.CTk):
         stats = [
             ("total", "Total Files", "0"),
             ("unique", "Unique", "0"),
-            ("duplicates", "Duplicates", "0"),
+            ("groups", "Duplicate Groups", "0"),
             ("space", "Space to Recover", "0 MB"),
         ]
 
@@ -222,33 +275,81 @@ class PhotoSifterApp(ctk.CTk):
             )
             self.stat_labels[key].pack(pady=(0, 10))
 
-        # Results list
-        self.results_text = ctk.CTkTextbox(tab)
-        self.results_text.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
-        self.results_text.configure(state="disabled")
+        # Navigation frame for duplicate groups
+        nav_frame = ctk.CTkFrame(tab)
+        nav_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        nav_frame.grid_columnconfigure(1, weight=1)
 
-        # Placeholder text
-        self._update_results_text("Scan folders to see results here...")
+        self.prev_group_btn = ctk.CTkButton(
+            nav_frame, text="< Previous", width=100,
+            command=self._prev_group, state="disabled"
+        )
+        self.prev_group_btn.grid(row=0, column=0, padx=10, pady=10)
+
+        self.group_label = ctk.CTkLabel(
+            nav_frame,
+            text="No duplicates found",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        self.group_label.grid(row=0, column=1, padx=10, pady=10)
+
+        self.next_group_btn = ctk.CTkButton(
+            nav_frame, text="Next >", width=100,
+            command=self._next_group, state="disabled"
+        )
+        self.next_group_btn.grid(row=0, column=2, padx=10, pady=10)
+
+        # Duplicate group viewer (scrollable frame for file cards)
+        self.group_viewer_frame = ctk.CTkScrollableFrame(tab, orientation="horizontal", height=280)
+        self.group_viewer_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 10))
+
+        # Placeholder
+        self.placeholder_label = ctk.CTkLabel(
+            self.group_viewer_frame,
+            text="Scan folders to see duplicate groups here...\n\nIn each group, select which file to KEEP.\nAll other files will be moved to the review folder.",
+            font=ctk.CTkFont(size=14),
+            text_color="gray"
+        )
+        self.placeholder_label.pack(expand=True, pady=50)
 
     def _create_organize_tab(self):
-        """Create the organize tab with options and action button."""
+        """Create the organize/process tab with options and action button."""
         tab = self.tab_organize
         tab.grid_columnconfigure(0, weight=1)
 
-        # Options frame
-        options_frame = ctk.CTkFrame(tab)
-        options_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        # Smart mode info frame
+        self.smart_mode_info = ctk.CTkFrame(tab)
+        self.smart_mode_info.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
         ctk.CTkLabel(
-            options_frame,
-            text="Organization Options",
+            self.smart_mode_info,
+            text="Smart Mode",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(15, 5))
+
+        ctk.CTkLabel(
+            self.smart_mode_info,
+            text="Files you marked as duplicates will be moved to the review folder.\n"
+                 "Your original files will stay in place. You can review and delete\n"
+                 "duplicates later from the 'Manage Review' tab.",
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            justify="left"
+        ).grid(row=1, column=0, sticky="w", padx=20, pady=(0, 15))
+
+        # Classic mode options frame (hidden by default)
+        self.classic_options_frame = ctk.CTkFrame(tab)
+
+        ctk.CTkLabel(
+            self.classic_options_frame,
+            text="Classic Mode Options",
             font=ctk.CTkFont(size=16, weight="bold")
         ).grid(row=0, column=0, sticky="w", padx=20, pady=(15, 10))
 
         # Organize by date option
         self.organize_by_date_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(
-            options_frame,
+            self.classic_options_frame,
             text="Organize photos by date (YYYY/MM folders)",
             variable=self.organize_by_date_var
         ).grid(row=1, column=0, sticky="w", padx=20, pady=5)
@@ -256,7 +357,7 @@ class PhotoSifterApp(ctk.CTk):
         # Move vs copy option
         self.move_files_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(
-            options_frame,
+            self.classic_options_frame,
             text="Move files (uncheck to copy instead)",
             variable=self.move_files_var
         ).grid(row=2, column=0, sticky="w", padx=20, pady=(5, 15))
@@ -267,28 +368,92 @@ class PhotoSifterApp(ctk.CTk):
             text="Run a scan first to see what will happen.",
             font=ctk.CTkFont(size=14)
         )
-        self.action_summary.grid(row=1, column=0, pady=20)
+        self.action_summary.grid(row=2, column=0, pady=20)
 
-        # Organize button
+        # Process button
         self.organize_btn = ctk.CTkButton(
             tab,
-            text="Organize Photos",
+            text="Move Duplicates to Review",
             height=50,
             font=ctk.CTkFont(size=18, weight="bold"),
             command=self._start_organize,
             state="disabled"
         )
-        self.organize_btn.grid(row=2, column=0, pady=20)
+        self.organize_btn.grid(row=3, column=0, pady=20)
 
         # Progress bar (hidden initially)
         self.progress_bar = ctk.CTkProgressBar(tab, width=400)
-        self.progress_bar.grid(row=3, column=0, pady=10)
+        self.progress_bar.grid(row=4, column=0, pady=10)
         self.progress_bar.set(0)
         self.progress_bar.grid_remove()
 
         self.progress_label = ctk.CTkLabel(tab, text="")
-        self.progress_label.grid(row=4, column=0)
+        self.progress_label.grid(row=5, column=0)
         self.progress_label.grid_remove()
+
+    def _create_manage_tab(self):
+        """Create the manage review folder tab."""
+        tab = self.tab_manage
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(1, weight=1)
+
+        # Header
+        header_frame = ctk.CTkFrame(tab)
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        header_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Review Folder",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(15, 5))
+
+        self.review_folder_label = ctk.CTkLabel(
+            header_frame,
+            text="No review folder selected",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        self.review_folder_label.grid(row=1, column=0, sticky="w", padx=20, pady=(0, 10))
+
+        ctk.CTkButton(
+            header_frame,
+            text="Refresh",
+            width=100,
+            command=self._refresh_review_folder
+        ).grid(row=0, column=1, sticky="e", padx=20, pady=(15, 5))
+
+        # File list
+        self.review_list_frame = ctk.CTkScrollableFrame(tab)
+        self.review_list_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.review_list_frame.grid_columnconfigure(0, weight=1)
+
+        self.review_placeholder = ctk.CTkLabel(
+            self.review_list_frame,
+            text="No files in review folder.\n\nAfter processing duplicates, they will appear here\nfor you to review, delete, or revert.",
+            font=ctk.CTkFont(size=14),
+            text_color="gray"
+        )
+        self.review_placeholder.pack(expand=True, pady=50)
+
+        # Action buttons
+        btn_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        btn_frame.grid(row=2, column=0, pady=10)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Delete All (to Trash)",
+            fg_color="red",
+            hover_color="darkred",
+            command=self._delete_all_review
+        ).pack(side="left", padx=10)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Revert All",
+            fg_color="gray",
+            command=self._revert_all_review
+        ).pack(side="left", padx=10)
 
     def _create_status_bar(self):
         """Create status bar at bottom."""
@@ -426,65 +591,364 @@ class PhotoSifterApp(ctk.CTk):
         # Update stats
         self.stat_labels["total"].configure(text=f"{result.total_files:,}")
         self.stat_labels["unique"].configure(text=f"{len(result.unique_files):,}")
-        self.stat_labels["duplicates"].configure(text=f"{result.duplicate_count:,}")
+        self.stat_labels["groups"].configure(text=f"{result.duplicate_group_count:,}")
         self.stat_labels["space"].configure(text=format_size(result.space_recoverable))
 
-        # Update results text
-        lines = [f"Scan complete!\n"]
-        lines.append(f"Found {result.duplicate_count:,} duplicates ({format_size(result.space_recoverable)} recoverable)\n\n")
+        # Show duplicate groups viewer
+        self.current_group_index = 0
+        self.thumbnail_cache.clear()
 
-        if result.duplicates:
-            lines.append("Duplicates found:\n")
-            for dup in result.duplicates[:100]:  # Show first 100
-                lines.append(f"  {dup.path.name}\n")
-                lines.append(f"    -> duplicate of: {dup.duplicate_of.name}\n")
+        if result.duplicate_groups:
+            # Enable navigation
+            self._update_group_navigation()
+            self._show_duplicate_group(0)
+        else:
+            self.group_label.configure(text="No duplicates found")
+            self.prev_group_btn.configure(state="disabled")
+            self.next_group_btn.configure(state="disabled")
+            # Show placeholder
+            for widget in self.group_viewer_frame.winfo_children():
+                widget.destroy()
+            ctk.CTkLabel(
+                self.group_viewer_frame,
+                text="No duplicates found in the scanned folders.",
+                font=ctk.CTkFont(size=14),
+                text_color="gray"
+            ).pack(expand=True, pady=50)
 
-            if len(result.duplicates) > 100:
-                lines.append(f"\n  ... and {len(result.duplicates) - 100} more\n")
+        # Update organize tab based on mode
+        if self.smart_mode_var.get():
+            self.smart_mode_info.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+            self.classic_options_frame.grid_remove()
+            self.organize_btn.configure(text="Move Duplicates to Review")
+            self.action_summary.configure(
+                text=f"Ready to move {result.duplicate_count:,} duplicates to review folder.\n"
+                     f"Your {len(result.unique_files):,} unique files will stay in place."
+            )
+        else:
+            self.smart_mode_info.grid_remove()
+            self.classic_options_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+            self.organize_btn.configure(text="Organize Photos")
+            action = "move" if self.move_files_var.get() else "copy"
+            self.action_summary.configure(
+                text=f"Ready to {action} {len(result.unique_files):,} unique files and "
+                     f"move {result.duplicate_count:,} duplicates."
+            )
 
-        if result.errors:
-            lines.append(f"\nErrors ({len(result.errors)}):\n")
-            for err in result.errors[:10]:
-                lines.append(f"  {err}\n")
-
-        self._update_results_text("".join(lines))
-
-        # Update organize tab
-        action = "move" if self.move_files_var.get() else "copy"
-        self.action_summary.configure(
-            text=f"Ready to {action} {len(result.unique_files):,} unique files and "
-                 f"move {result.duplicate_count:,} duplicates."
-        )
-
-        if result.total_files > 0:
+        if result.duplicate_groups:
             self.organize_btn.configure(state="normal")
 
         # Switch to review tab
-        self.tabview.set("2. Review")
-        self.status_label.configure(text=f"Scan complete: {result.total_files:,} files found")
+        self.tabview.set("2. Review Duplicates")
+        self.status_label.configure(text=f"Scan complete: {result.total_files:,} files, {result.duplicate_group_count:,} duplicate groups")
 
-    def _update_results_text(self, text: str):
-        """Update the results textbox."""
-        self.results_text.configure(state="normal")
-        self.results_text.delete("1.0", "end")
-        self.results_text.insert("1.0", text)
-        self.results_text.configure(state="disabled")
+    def _update_group_navigation(self):
+        """Update the navigation buttons state."""
+        if not self.scan_result or not self.scan_result.duplicate_groups:
+            return
+
+        total = len(self.scan_result.duplicate_groups)
+        self.group_label.configure(text=f"Group {self.current_group_index + 1} of {total}")
+
+        self.prev_group_btn.configure(
+            state="normal" if self.current_group_index > 0 else "disabled"
+        )
+        self.next_group_btn.configure(
+            state="normal" if self.current_group_index < total - 1 else "disabled"
+        )
+
+    def _prev_group(self):
+        """Navigate to previous duplicate group."""
+        if self.current_group_index > 0:
+            self.current_group_index -= 1
+            self._update_group_navigation()
+            self._show_duplicate_group(self.current_group_index)
+
+    def _next_group(self):
+        """Navigate to next duplicate group."""
+        if self.scan_result and self.current_group_index < len(self.scan_result.duplicate_groups) - 1:
+            self.current_group_index += 1
+            self._update_group_navigation()
+            self._show_duplicate_group(self.current_group_index)
+
+    def _show_duplicate_group(self, index: int):
+        """Display a duplicate group with file cards."""
+        if not self.scan_result or index >= len(self.scan_result.duplicate_groups):
+            return
+
+        group = self.scan_result.duplicate_groups[index]
+
+        # Clear previous cards
+        for widget in self.group_viewer_frame.winfo_children():
+            widget.destroy()
+
+        # Create radio button variable for this group
+        self.current_selection_var = ctk.StringVar(value=str(group.selected_to_keep))
+
+        # Create a card for each file
+        for i, media_file in enumerate(group.files):
+            self._create_file_card(group, media_file, i)
+
+    def _create_file_card(self, group: DuplicateGroup, media_file, index: int):
+        """Create a card widget for a file in a duplicate group."""
+        card = ctk.CTkFrame(self.group_viewer_frame, width=180)
+        card.pack(side="left", padx=10, pady=10, fill="y")
+        card.pack_propagate(False)
+
+        # Thumbnail
+        thumbnail_label = ctk.CTkLabel(card, text="", width=150, height=120)
+        thumbnail_label.pack(pady=(10, 5))
+
+        # Load thumbnail in background
+        self._load_thumbnail(media_file.path, thumbnail_label)
+
+        # Radio button to select
+        is_selected = media_file.path == group.selected_to_keep
+        radio = ctk.CTkRadioButton(
+            card,
+            text="KEEP" if is_selected else "Delete",
+            variable=self.current_selection_var,
+            value=str(media_file.path),
+            command=lambda g=group, f=media_file: self._select_file_to_keep(g, f)
+        )
+        radio.pack(pady=5)
+
+        # File info
+        path_text = str(media_file.path)
+        if len(path_text) > 25:
+            path_text = "..." + path_text[-22:]
+
+        ctk.CTkLabel(
+            card,
+            text=path_text,
+            font=ctk.CTkFont(size=10),
+            text_color="gray",
+            wraplength=160
+        ).pack(pady=2)
+
+        ctk.CTkLabel(
+            card,
+            text=format_size(media_file.size),
+            font=ctk.CTkFont(size=11, weight="bold")
+        ).pack(pady=2)
+
+        if media_file.date_taken:
+            ctk.CTkLabel(
+                card,
+                text=media_file.date_taken.strftime("%Y-%m-%d"),
+                font=ctk.CTkFont(size=10),
+                text_color="gray"
+            ).pack(pady=2)
+
+    def _load_thumbnail(self, file_path: Path, label: ctk.CTkLabel):
+        """Load a thumbnail for display."""
+        cache_key = str(file_path)
+
+        if cache_key in self.thumbnail_cache:
+            label.configure(image=self.thumbnail_cache[cache_key])
+            return
+
+        def load():
+            try:
+                if file_path.suffix.lower() in PHOTO_EXTS:
+                    img = Image.open(file_path)
+                    img.thumbnail(THUMBNAIL_SIZE)
+                    photo = ImageTk.PhotoImage(img)
+                    self.thumbnail_cache[cache_key] = photo
+                    self.after(0, lambda: label.configure(image=photo))
+                else:
+                    # Video or unsupported - show placeholder text
+                    self.after(0, lambda: label.configure(text="[Video]"))
+            except Exception:
+                self.after(0, lambda: label.configure(text="[Error]"))
+
+        threading.Thread(target=load, daemon=True).start()
+
+    def _select_file_to_keep(self, group: DuplicateGroup, media_file):
+        """Handle selection of which file to keep in a duplicate group."""
+        group.selected_to_keep = media_file.path
+
+        # Refresh the display to update labels
+        self._show_duplicate_group(self.current_group_index)
+
+        # Update space recoverable display
+        if self.scan_result:
+            self.stat_labels["space"].configure(
+                text=format_size(self.scan_result.space_recoverable)
+            )
+
+    def _refresh_review_folder(self):
+        """Refresh the review folder file list."""
+        if not self.duplicates_folder or not self.duplicates_folder.exists():
+            self.review_folder_label.configure(text="No review folder selected")
+            return
+
+        self.review_folder_label.configure(text=str(self.duplicates_folder))
+
+        # Clear previous items
+        for widget in self.review_list_frame.winfo_children():
+            widget.destroy()
+
+        files = self.engine.get_review_folder_files(self.duplicates_folder)
+
+        if not files:
+            ctk.CTkLabel(
+                self.review_list_frame,
+                text="No files in review folder.",
+                font=ctk.CTkFont(size=14),
+                text_color="gray"
+            ).pack(expand=True, pady=50)
+            return
+
+        # Create a row for each file
+        for filename, original_path, size in files:
+            row = ctk.CTkFrame(self.review_list_frame)
+            row.pack(fill="x", pady=2, padx=5)
+            row.grid_columnconfigure(1, weight=1)
+
+            ctk.CTkLabel(
+                row,
+                text=filename,
+                font=ctk.CTkFont(size=12, weight="bold"),
+                anchor="w"
+            ).grid(row=0, column=0, columnspan=3, sticky="w", padx=10, pady=(5, 0))
+
+            ctk.CTkLabel(
+                row,
+                text=f"Original: {original_path}",
+                font=ctk.CTkFont(size=10),
+                text_color="gray",
+                anchor="w"
+            ).grid(row=1, column=0, sticky="w", padx=10)
+
+            ctk.CTkLabel(
+                row,
+                text=format_size(size),
+                font=ctk.CTkFont(size=10)
+            ).grid(row=1, column=1, sticky="e", padx=5)
+
+            btn_frame = ctk.CTkFrame(row, fg_color="transparent")
+            btn_frame.grid(row=0, column=3, rowspan=2, padx=5, pady=5)
+
+            ctk.CTkButton(
+                btn_frame,
+                text="Revert",
+                width=60,
+                height=25,
+                font=ctk.CTkFont(size=11),
+                command=lambda f=filename: self._revert_single_file(f)
+            ).pack(side="left", padx=2)
+
+            ctk.CTkButton(
+                btn_frame,
+                text="Delete",
+                width=60,
+                height=25,
+                font=ctk.CTkFont(size=11),
+                fg_color="red",
+                hover_color="darkred",
+                command=lambda f=filename: self._delete_single_file(f)
+            ).pack(side="left", padx=2)
+
+    def _revert_single_file(self, filename: str):
+        """Revert a single file to its original location."""
+        if not self.duplicates_folder:
+            return
+
+        success, message = self.engine.revert_file(self.duplicates_folder, filename)
+        if success:
+            messagebox.showinfo("Reverted", message)
+        else:
+            messagebox.showerror("Error", message)
+        self._refresh_review_folder()
+
+    def _delete_single_file(self, filename: str):
+        """Delete a single file from review folder."""
+        if not self.duplicates_folder:
+            return
+
+        if messagebox.askyesno("Confirm Delete", f"Delete {filename}?\n\nThis will move the file to your system trash."):
+            success, message = self.engine.delete_from_review(self.duplicates_folder, filename)
+            if success:
+                self.status_label.configure(text=message)
+            else:
+                messagebox.showerror("Error", message)
+            self._refresh_review_folder()
+
+    def _delete_all_review(self):
+        """Delete all files from review folder."""
+        if not self.duplicates_folder or not self.duplicates_folder.exists():
+            messagebox.showwarning("No folder", "No review folder selected.")
+            return
+
+        files = self.engine.get_review_folder_files(self.duplicates_folder)
+        if not files:
+            messagebox.showinfo("Empty", "No files to delete.")
+            return
+
+        if messagebox.askyesno(
+            "Confirm Delete All",
+            f"Delete all {len(files)} files from review folder?\n\n"
+            "Files will be moved to your system trash."
+        ):
+            deleted = 0
+            for filename, _, _ in files:
+                success, _ = self.engine.delete_from_review(self.duplicates_folder, filename)
+                if success:
+                    deleted += 1
+
+            messagebox.showinfo("Complete", f"Deleted {deleted} files.")
+            self._refresh_review_folder()
+
+    def _revert_all_review(self):
+        """Revert all files to their original locations."""
+        if not self.duplicates_folder or not self.duplicates_folder.exists():
+            messagebox.showwarning("No folder", "No review folder selected.")
+            return
+
+        files = self.engine.get_review_folder_files(self.duplicates_folder)
+        if not files:
+            messagebox.showinfo("Empty", "No files to revert.")
+            return
+
+        if messagebox.askyesno(
+            "Confirm Revert All",
+            f"Revert all {len(files)} files to their original locations?"
+        ):
+            reverted = 0
+            for filename, _, _ in files:
+                success, _ = self.engine.revert_file(self.duplicates_folder, filename)
+                if success:
+                    reverted += 1
+
+            messagebox.showinfo("Complete", f"Reverted {reverted} files.")
+            self._refresh_review_folder()
 
     def _start_organize(self):
-        """Start organizing files."""
+        """Start organizing/processing files."""
         if not self.scan_result:
             messagebox.showwarning("No scan", "Please scan folders first.")
             return
 
-        if not self.destination_folder:
+        if not self.duplicates_folder:
+            if self.destination_folder:
+                self.duplicates_folder = self.destination_folder / "Duplicates"
+            else:
+                messagebox.showwarning("No folder", "Please select a duplicates/review folder.")
+                return
+
+        is_smart_mode = self.smart_mode_var.get()
+
+        # For classic mode, destination is required
+        if not is_smart_mode and not self.destination_folder:
             messagebox.showwarning("No destination", "Please select a destination folder.")
             return
 
-        if not self.duplicates_folder:
-            self.duplicates_folder = self.destination_folder / "Duplicates"
-
         # Check free tier
-        to_process = len(self.scan_result.unique_files) + len(self.scan_result.duplicates)
+        to_process = self.scan_result.duplicate_count
+        if not is_smart_mode:
+            to_process += len(self.scan_result.unique_files)
+
         can_process, max_allowed = self.license_manager.can_process(to_process)
 
         if not can_process:
@@ -501,18 +965,27 @@ class PhotoSifterApp(ctk.CTk):
                     return
 
         # Confirm action
-        action = "Move" if self.move_files_var.get() else "Copy"
-        result = messagebox.askyesno(
-            "Confirm",
-            f"{action} {len(self.scan_result.unique_files):,} photos to:\n{self.destination_folder}\n\n"
-            f"Move {len(self.scan_result.duplicates):,} duplicates to:\n{self.duplicates_folder}\n\n"
-            "Continue?"
-        )
+        if is_smart_mode:
+            result = messagebox.askyesno(
+                "Confirm",
+                f"Move {self.scan_result.duplicate_count:,} duplicate files to:\n{self.duplicates_folder}\n\n"
+                f"Your {len(self.scan_result.unique_files):,} original files will stay in place.\n\n"
+                "Continue?"
+            )
+        else:
+            action = "Move" if self.move_files_var.get() else "Copy"
+            result = messagebox.askyesno(
+                "Confirm",
+                f"{action} {len(self.scan_result.unique_files):,} photos to:\n{self.destination_folder}\n\n"
+                f"Move {self.scan_result.duplicate_count:,} duplicates to:\n{self.duplicates_folder}\n\n"
+                "Continue?"
+            )
 
         if not result:
             return
 
-        self.organize_btn.configure(state="disabled", text="Organizing...")
+        btn_text = "Moving..." if is_smart_mode else "Organizing..."
+        self.organize_btn.configure(state="disabled", text=btn_text)
         self.progress_bar.grid()
         self.progress_label.grid()
         self.progress_bar.set(0)
@@ -523,59 +996,92 @@ class PhotoSifterApp(ctk.CTk):
 
     def _run_organize(self):
         """Run organization in background thread."""
-        total = len(self.scan_result.unique_files) + len(self.scan_result.duplicates)
+        is_smart_mode = self.smart_mode_var.get()
 
         def progress(current, total, filename):
             pct = current / total if total > 0 else 0
             self.after(0, lambda: self._update_progress(pct, filename))
 
-        organized, dupes_moved, errors = self.engine.organize_files(
-            destination=self.destination_folder,
-            duplicates_folder=self.duplicates_folder,
-            result=self.scan_result,
-            organize_by_date=self.organize_by_date_var.get(),
-            move_files=self.move_files_var.get(),
-            progress_callback=progress
-        )
+        if is_smart_mode:
+            # Smart mode: only move duplicates to review folder
+            dupes_moved, errors = self.engine.move_duplicates_to_review(
+                result=self.scan_result,
+                review_folder=self.duplicates_folder,
+                progress_callback=progress
+            )
+            organized = 0
+        else:
+            # Classic mode: organize all files
+            organized, dupes_moved, errors = self.engine.organize_files(
+                destination=self.destination_folder,
+                duplicates_folder=self.duplicates_folder,
+                result=self.scan_result,
+                organize_by_date=self.organize_by_date_var.get(),
+                move_files=self.move_files_var.get(),
+                progress_callback=progress
+            )
 
         # Record usage for licensing
         self.license_manager.record_processed(organized + dupes_moved)
 
         # Update UI
-        self.after(0, lambda: self._organize_complete(organized, dupes_moved, errors))
+        self.after(0, lambda: self._organize_complete(organized, dupes_moved, errors, is_smart_mode))
 
     def _update_progress(self, pct: float, filename: str):
         """Update progress display."""
         self.progress_bar.set(pct)
         self.progress_label.configure(text=f"Processing: {filename[:60]}")
 
-    def _organize_complete(self, organized: int, dupes_moved: int, errors: list):
+    def _organize_complete(self, organized: int, dupes_moved: int, errors: list, is_smart_mode: bool = False):
         """Handle organization completion."""
-        self.organize_btn.configure(state="normal", text="Organize Photos")
+        btn_text = "Move Duplicates to Review" if is_smart_mode else "Organize Photos"
+        self.organize_btn.configure(state="normal", text=btn_text)
         self.progress_bar.grid_remove()
         self.progress_label.grid_remove()
 
         self._update_license_status()
 
-        if errors:
-            messagebox.showwarning(
-                "Complete with errors",
-                f"Organized {organized:,} files\n"
-                f"Moved {dupes_moved:,} duplicates\n\n"
-                f"{len(errors)} errors occurred."
-            )
-        else:
-            messagebox.showinfo(
-                "Complete!",
-                f"Successfully organized {organized:,} photos!\n"
-                f"Moved {dupes_moved:,} duplicates to the duplicates folder."
-            )
+        if is_smart_mode:
+            if errors:
+                messagebox.showwarning(
+                    "Complete with errors",
+                    f"Moved {dupes_moved:,} duplicates to review folder\n\n"
+                    f"{len(errors)} errors occurred."
+                )
+            else:
+                messagebox.showinfo(
+                    "Complete!",
+                    f"Moved {dupes_moved:,} duplicates to the review folder.\n\n"
+                    f"Go to 'Manage Review' tab to delete or revert files."
+                )
+            self.status_label.configure(text=f"Done: {dupes_moved:,} duplicates moved to review")
 
-        self.status_label.configure(text=f"Done: {organized:,} organized, {dupes_moved:,} duplicates moved")
+            # Refresh review folder display
+            self._refresh_review_folder()
+
+            # Switch to manage tab
+            self.tabview.set("4. Manage Review")
+        else:
+            if errors:
+                messagebox.showwarning(
+                    "Complete with errors",
+                    f"Organized {organized:,} files\n"
+                    f"Moved {dupes_moved:,} duplicates\n\n"
+                    f"{len(errors)} errors occurred."
+                )
+            else:
+                messagebox.showinfo(
+                    "Complete!",
+                    f"Successfully organized {organized:,} photos!\n"
+                    f"Moved {dupes_moved:,} duplicates to the duplicates folder."
+                )
+            self.status_label.configure(text=f"Done: {organized:,} organized, {dupes_moved:,} duplicates moved")
 
         # Reset for next run
         self.scan_result = None
         self.organize_btn.configure(state="disabled")
+        self.current_group_index = 0
+        self.thumbnail_cache.clear()
 
     def _show_license_dialog(self):
         """Show license activation dialog."""
