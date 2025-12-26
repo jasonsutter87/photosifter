@@ -697,22 +697,38 @@ class PhotoSifterApp(ctk.CTk):
 
     def _create_file_card(self, group: DuplicateGroup, media_file, index: int):
         """Create a card widget for a file in a duplicate group."""
-        card = ctk.CTkFrame(self.group_viewer_frame, width=180)
+        is_selected = media_file.path == group.selected_to_keep
+
+        # Highlight selected card with green border
+        card = ctk.CTkFrame(
+            self.group_viewer_frame,
+            width=180,
+            border_width=3 if is_selected else 1,
+            border_color="green" if is_selected else "gray"
+        )
         card.pack(side="left", padx=10, pady=10, fill="y")
         card.pack_propagate(False)
 
+        # Status label at top
+        status_label = ctk.CTkLabel(
+            card,
+            text="KEEPING" if is_selected else "Will be moved to review",
+            font=ctk.CTkFont(size=11, weight="bold" if is_selected else "normal"),
+            text_color="green" if is_selected else "gray"
+        )
+        status_label.pack(pady=(8, 2))
+
         # Thumbnail
         thumbnail_label = ctk.CTkLabel(card, text="", width=150, height=120)
-        thumbnail_label.pack(pady=(10, 5))
+        thumbnail_label.pack(pady=(5, 5))
 
         # Load thumbnail in background
         self._load_thumbnail(media_file.path, thumbnail_label)
 
-        # Radio button to select
-        is_selected = media_file.path == group.selected_to_keep
+        # Radio button to select - consistent label
         radio = ctk.CTkRadioButton(
             card,
-            text="KEEP" if is_selected else "Delete",
+            text="Keep this one",
             variable=self.current_selection_var,
             value=str(media_file.path),
             command=lambda g=group, f=media_file: self._select_file_to_keep(g, f)
