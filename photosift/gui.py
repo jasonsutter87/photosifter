@@ -7,8 +7,9 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 
 from . import __version__, __app_name__
-from .engine import PhotoSifterEngine, ScanResult, DuplicateGroup, format_size, PHOTO_EXTS
+from .engine import PhotoSifterEngine, ScanResult, DuplicateGroup, format_size, PHOTO_EXTS, VIDEO_EXTS
 from .licensing import LicenseManager, FREE_TIER_LIMIT
+from .updater import check_for_updates_async
 
 # Thumbnail settings
 THUMBNAIL_SIZE = (120, 120)
@@ -46,6 +47,9 @@ class PhotoSifterApp(ctk.CTk):
         self._create_ui()
         self._update_license_status()
 
+        # Check for updates on startup (non-blocking)
+        self.after(1000, self._check_for_updates)
+
     def _create_ui(self):
         """Create the main UI layout."""
         # Configure grid
@@ -78,7 +82,7 @@ class PhotoSifterApp(ctk.CTk):
         # Subtitle
         subtitle = ctk.CTkLabel(
             header,
-            text="Smart photo deduplication and organization",
+            text="Smart photo & video deduplication and organization",
             font=ctk.CTkFont(size=14),
             text_color="gray"
         )
@@ -160,7 +164,7 @@ class PhotoSifterApp(ctk.CTk):
 
         ctk.CTkLabel(
             dest_frame,
-            text="Organize photos to:",
+            text="Organize files to:",
             font=ctk.CTkFont(weight="bold")
         ).grid(row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 5))
 
@@ -356,7 +360,7 @@ class PhotoSifterApp(ctk.CTk):
         self.organize_by_date_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(
             self.classic_options_frame,
-            text="Organize photos by date (YYYY/MM folders)",
+            text="Organize files by date (YYYY/MM folders)",
             variable=self.organize_by_date_var
         ).grid(row=1, column=0, sticky="w", padx=20, pady=5)
 
@@ -590,8 +594,8 @@ class PhotoSifterApp(ctk.CTk):
                 remaining = self.license_manager.photos_remaining
                 messagebox.showinfo(
                     "Free Tier Limit",
-                    f"Found {result.total_files:,} photos, but you have {remaining:,} remaining in your free tier.\n\n"
-                    f"Upgrade to process unlimited photos!"
+                    f"Found {result.total_files:,} files, but you have {remaining:,} remaining in your free tier.\n\n"
+                    f"Upgrade to process unlimited files!"
                 )
 
         # Update stats
@@ -779,8 +783,9 @@ class PhotoSifterApp(ctk.CTk):
                     self.thumbnail_cache[cache_key] = photo
                     self.after(0, lambda: label.configure(image=photo))
                 else:
-                    # Video or unsupported - show placeholder text
-                    self.after(0, lambda: label.configure(text="[Video]"))
+                    # Video or unsupported - show file type
+                    ext = file_path.suffix.upper()
+                    self.after(0, lambda e=ext: label.configure(text=f"{e}\nVideo"))
             except Exception:
                 self.after(0, lambda: label.configure(text="[Error]"))
 
@@ -980,8 +985,8 @@ class PhotoSifterApp(ctk.CTk):
             else:
                 result = messagebox.askyesno(
                     "Free Tier Limit",
-                    f"You can only process {max_allowed:,} more photos in the free tier.\n\n"
-                    f"Process {max_allowed:,} photos now?"
+                    f"You can only process {max_allowed:,} more files in the free tier.\n\n"
+                    f"Process {max_allowed:,} files now?"
                 )
                 if not result:
                     return
@@ -1094,7 +1099,7 @@ class PhotoSifterApp(ctk.CTk):
             else:
                 messagebox.showinfo(
                     "Complete!",
-                    f"Successfully organized {organized:,} photos!\n"
+                    f"Successfully organized {organized:,} files!\n"
                     f"Moved {dupes_moved:,} duplicates to the duplicates folder."
                 )
             self.status_label.configure(text=f"Done: {organized:,} organized, {dupes_moved:,} duplicates moved")
@@ -1116,12 +1121,37 @@ class PhotoSifterApp(ctk.CTk):
         """Show upgrade prompt when free tier is exhausted."""
         result = messagebox.askyesno(
             "Free Tier Limit Reached",
-            f"You've processed {FREE_TIER_LIMIT:,} photos with the free version.\n\n"
-            "Upgrade to PhotoSifter Pro for unlimited photo organization!\n\n"
+            f"You've processed {FREE_TIER_LIMIT:,} files with the free version.\n\n"
+            "Upgrade to PhotoSifter Pro for unlimited organization!\n\n"
             "Would you like to enter a license key?"
         )
         if result:
             self._show_license_dialog()
+
+    def _check_for_updates(self):
+        """Check for updates in background."""
+        def on_update_check(version, url, notes):
+            if version and url:
+                self.after(0, lambda: self._show_update_dialog(version, url, notes))
+
+        check_for_updates_async(on_update_check)
+
+    def _show_update_dialog(self, version: str, url: str, notes: str):
+        """Show update available dialog."""
+        notes_preview = notes[:200] + "..." if len(notes) > 200 else notes
+
+        result = messagebox.askyesno(
+            "Update Available",
+            f"A new version of PhotoSifter is available!\n\n"
+            f"Current version: {__version__}\n"
+            f"New version: {version}\n\n"
+            f"{notes_preview}\n\n"
+            "Would you like to download the update?"
+        )
+
+        if result:
+            import webbrowser
+            webbrowser.open(url)
 
 
 class LicenseDialog(ctk.CTkToplevel):
