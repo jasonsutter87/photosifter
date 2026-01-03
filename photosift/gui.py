@@ -54,7 +54,7 @@ class PhotoSifterApp(ctk.CTk):
         """Create the main UI layout."""
         # Configure grid
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(1, weight=1)  # Row 1 is the tabview
 
         # Header frame
         self._create_header()
@@ -119,17 +119,13 @@ class PhotoSifterApp(ctk.CTk):
         """Create the folder selection and scan tab."""
         tab = self.tab_scan
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1)  # Source frame expands
 
-        # Scrollable container for all content
-        scroll_container = ctk.CTkScrollableFrame(tab, fg_color="transparent")
-        scroll_container.grid(row=0, column=0, sticky="nsew")
-        scroll_container.grid_columnconfigure(0, weight=1)
-
-        # Source folders section
-        source_frame = ctk.CTkFrame(scroll_container)
-        source_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        # Source folders section (expandable)
+        source_frame = ctk.CTkFrame(tab)
+        source_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
         source_frame.grid_columnconfigure(0, weight=1)
+        source_frame.grid_rowconfigure(1, weight=1)  # Textbox row expands
 
         ctk.CTkLabel(
             source_frame,
@@ -137,8 +133,8 @@ class PhotoSifterApp(ctk.CTk):
             font=ctk.CTkFont(weight="bold")
         ).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 5))
 
-        self.source_list = ctk.CTkTextbox(source_frame, height=100)
-        self.source_list.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 10))
+        self.source_list = ctk.CTkTextbox(source_frame)
+        self.source_list.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         self.source_list.configure(state="disabled")
 
         btn_frame = ctk.CTkFrame(source_frame, fg_color="transparent")
@@ -158,7 +154,7 @@ class PhotoSifterApp(ctk.CTk):
         ).pack(side="left")
 
         # Destination folder section
-        dest_frame = ctk.CTkFrame(scroll_container)
+        dest_frame = ctk.CTkFrame(tab)
         dest_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
         dest_frame.grid_columnconfigure(1, weight=1)
 
@@ -196,7 +192,7 @@ class PhotoSifterApp(ctk.CTk):
         ).grid(row=5, column=0, sticky="w", padx=10, pady=(0, 10))
 
         # Mode selection frame
-        mode_frame = ctk.CTkFrame(scroll_container)
+        mode_frame = ctk.CTkFrame(tab)
         mode_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
 
         ctk.CTkLabel(
@@ -239,7 +235,7 @@ class PhotoSifterApp(ctk.CTk):
 
         # Scan button
         self.scan_btn = ctk.CTkButton(
-            scroll_container,
+            tab,
             text="Scan for Duplicates",
             height=40,
             font=ctk.CTkFont(size=16, weight="bold"),
@@ -468,7 +464,7 @@ class PhotoSifterApp(ctk.CTk):
     def _create_status_bar(self):
         """Create status bar at bottom."""
         status_frame = ctk.CTkFrame(self, height=30, corner_radius=0)
-        status_frame.grid(row=3, column=0, sticky="ew")
+        status_frame.grid(row=2, column=0, sticky="ew")
         status_frame.grid_columnconfigure(0, weight=1)
 
         self.status_label = ctk.CTkLabel(
