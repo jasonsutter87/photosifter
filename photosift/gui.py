@@ -118,66 +118,47 @@ class PhotoSifterApp(ctk.CTk):
     def _create_scan_tab(self):
         """Create the folder selection and scan tab."""
         tab = self.tab_scan
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1)
 
-        # Bottom section (fixed height) - pack first with side=BOTTOM
-        bottom_frame = ctk.CTkFrame(tab, fg_color="transparent")
-        bottom_frame.pack(side="bottom", fill="x", pady=(0, 10))
+        # Scrollable container so nothing gets cut off on small screens
+        scroll = ctk.CTkScrollableFrame(tab, fg_color="transparent")
+        scroll.grid(row=0, column=0, sticky="nsew")
+        scroll.grid_columnconfigure(0, weight=1)
 
-        # Scan button at very bottom
-        self.scan_btn = ctk.CTkButton(
-            bottom_frame,
-            text="Scan for Duplicates",
-            height=40,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            command=self._start_scan
-        )
-        self.scan_btn.pack(pady=(10, 0))
-
-        # Mode selection frame
-        mode_frame = ctk.CTkFrame(bottom_frame)
-        mode_frame.pack(side="bottom", fill="x", pady=(0, 10))
+        # Source folders section
+        source_frame = ctk.CTkFrame(scroll)
+        source_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
-            mode_frame,
-            text="Scan Mode",
+            source_frame,
+            text="Folders to scan:",
             font=ctk.CTkFont(weight="bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
-        # Smart mode (default)
-        smart_radio = ctk.CTkRadioButton(
-            mode_frame,
-            text="Smart Mode (recommended)",
-            variable=self.smart_mode_var,
-            value=True
-        )
-        smart_radio.pack(anchor="w", padx=20, pady=2)
+        self.source_list = ctk.CTkTextbox(source_frame, height=120)
+        self.source_list.pack(fill="x", padx=10, pady=(0, 10))
+        self.source_list.configure(state="disabled")
 
-        ctk.CTkLabel(
-            mode_frame,
-            text="Keep originals in place, move only duplicates to review folder",
-            text_color="gray",
-            font=ctk.CTkFont(size=11)
-        ).pack(anchor="w", padx=40, pady=(0, 5))
+        btn_frame = ctk.CTkFrame(source_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
 
-        # Classic mode
-        classic_radio = ctk.CTkRadioButton(
-            mode_frame,
-            text="Classic Mode",
-            variable=self.smart_mode_var,
-            value=False
-        )
-        classic_radio.pack(anchor="w", padx=20, pady=2)
+        ctk.CTkButton(
+            btn_frame,
+            text="Add Folder",
+            command=self._add_source_folder
+        ).pack(side="left", padx=(0, 10))
 
-        ctk.CTkLabel(
-            mode_frame,
-            text="Organize all files by date (YYYY/MM) and move duplicates",
-            text_color="gray",
-            font=ctk.CTkFont(size=11)
-        ).pack(anchor="w", padx=40, pady=(0, 10))
+        ctk.CTkButton(
+            btn_frame,
+            text="Clear All",
+            fg_color="gray",
+            command=self._clear_source_folders
+        ).pack(side="left")
 
         # Destination folder section
-        dest_frame = ctk.CTkFrame(bottom_frame)
-        dest_frame.pack(side="bottom", fill="x", pady=(0, 10))
+        dest_frame = ctk.CTkFrame(scroll)
+        dest_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
             dest_frame,
@@ -212,35 +193,55 @@ class PhotoSifterApp(ctk.CTk):
             command=self._select_duplicates_folder
         ).pack(anchor="w", padx=10, pady=(0, 10))
 
-        # Source folders section (expandable) - pack last to fill remaining space
-        source_frame = ctk.CTkFrame(tab)
-        source_frame.pack(side="top", fill="both", expand=True, pady=(0, 10))
+        # Mode selection frame
+        mode_frame = ctk.CTkFrame(scroll)
+        mode_frame.pack(fill="x", pady=(0, 10))
 
         ctk.CTkLabel(
-            source_frame,
-            text="Folders to scan:",
+            mode_frame,
+            text="Scan Mode",
             font=ctk.CTkFont(weight="bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
-        self.source_list = ctk.CTkTextbox(source_frame, height=150)
-        self.source_list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
-        self.source_list.configure(state="disabled")
+        smart_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Smart Mode (recommended)",
+            variable=self.smart_mode_var,
+            value=True
+        )
+        smart_radio.pack(anchor="w", padx=20, pady=2)
 
-        btn_frame = ctk.CTkFrame(source_frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
+        ctk.CTkLabel(
+            mode_frame,
+            text="Keep originals in place, move only duplicates to review folder",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).pack(anchor="w", padx=40, pady=(0, 5))
 
-        ctk.CTkButton(
-            btn_frame,
-            text="Add Folder",
-            command=self._add_source_folder
-        ).pack(side="left", padx=(0, 10))
+        classic_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Classic Mode",
+            variable=self.smart_mode_var,
+            value=False
+        )
+        classic_radio.pack(anchor="w", padx=20, pady=2)
 
-        ctk.CTkButton(
-            btn_frame,
-            text="Clear All",
-            fg_color="gray",
-            command=self._clear_source_folders
-        ).pack(side="left")
+        ctk.CTkLabel(
+            mode_frame,
+            text="Organize all files by date (YYYY/MM) and move duplicates",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).pack(anchor="w", padx=40, pady=(0, 10))
+
+        # Scan button
+        self.scan_btn = ctk.CTkButton(
+            scroll,
+            text="Scan for Duplicates",
+            height=40,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            command=self._start_scan
+        )
+        self.scan_btn.pack(pady=20)
 
     def _create_review_tab(self):
         """Create the review tab with duplicate group viewer."""

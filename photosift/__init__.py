@@ -1,4 +1,4 @@
 """PhotoSifter - Smart photo & video deduplication and organization."""
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __app_name__ = "PhotoSifter"

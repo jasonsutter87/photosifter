@@ -16,9 +16,9 @@ repoName = 'photosifter'
 lemonSqueezyUrl = 'https://photoshifter.lemonsqueezy.com/buy/351d48c6-a3aa-4334-aca4-9eb7f7059e09'
 
 # Download links (GitHub releases, etc.)
-downloadWindows = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.2/PhotoSifter-Windows.zip'
-downloadMac = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.2/PhotoSifter-macOS.zip'
-downloadLinux = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.2/PhotoSifter-Linux.zip'
+downloadWindows = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.3/PhotoSifter-Windows.zip'
+downloadMac = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.3/PhotoSifter-macOS.zip'
+downloadLinux = 'https://github.com/jasonsutter87/photosift/releases/download/v0.1.3/PhotoSifter-Linux.zip'
 
 [environments.development]
 baseURL = 'http://localhost:1313/'
