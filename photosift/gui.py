@@ -118,13 +118,10 @@ class PhotoSifterApp(ctk.CTk):
     def _create_scan_tab(self):
         """Create the folder selection and scan tab."""
         tab = self.tab_scan
-        tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(0, weight=1)
 
         # Scrollable container so nothing gets cut off on small screens
         scroll = ctk.CTkScrollableFrame(tab, fg_color="transparent")
-        scroll.grid(row=0, column=0, sticky="nsew")
-        scroll.grid_columnconfigure(0, weight=1)
+        scroll.pack(fill="both", expand=True)
 
         # Source folders section
         source_frame = ctk.CTkFrame(scroll)
