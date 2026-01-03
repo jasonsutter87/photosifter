@@ -118,27 +118,116 @@ class PhotoSifterApp(ctk.CTk):
     def _create_scan_tab(self):
         """Create the folder selection and scan tab."""
         tab = self.tab_scan
-        tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(0, weight=1)  # Source frame expands
 
-        # Source folders section (expandable)
+        # Bottom section (fixed height) - pack first with side=BOTTOM
+        bottom_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        bottom_frame.pack(side="bottom", fill="x", pady=(0, 10))
+
+        # Scan button at very bottom
+        self.scan_btn = ctk.CTkButton(
+            bottom_frame,
+            text="Scan for Duplicates",
+            height=40,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            command=self._start_scan
+        )
+        self.scan_btn.pack(pady=(10, 0))
+
+        # Mode selection frame
+        mode_frame = ctk.CTkFrame(bottom_frame)
+        mode_frame.pack(side="bottom", fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Scan Mode",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+
+        # Smart mode (default)
+        smart_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Smart Mode (recommended)",
+            variable=self.smart_mode_var,
+            value=True
+        )
+        smart_radio.pack(anchor="w", padx=20, pady=2)
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Keep originals in place, move only duplicates to review folder",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).pack(anchor="w", padx=40, pady=(0, 5))
+
+        # Classic mode
+        classic_radio = ctk.CTkRadioButton(
+            mode_frame,
+            text="Classic Mode",
+            variable=self.smart_mode_var,
+            value=False
+        )
+        classic_radio.pack(anchor="w", padx=20, pady=2)
+
+        ctk.CTkLabel(
+            mode_frame,
+            text="Organize all files by date (YYYY/MM) and move duplicates",
+            text_color="gray",
+            font=ctk.CTkFont(size=11)
+        ).pack(anchor="w", padx=40, pady=(0, 10))
+
+        # Destination folder section
+        dest_frame = ctk.CTkFrame(bottom_frame)
+        dest_frame.pack(side="bottom", fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(
+            dest_frame,
+            text="Organize files to:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+
+        self.dest_entry = ctk.CTkEntry(dest_frame, placeholder_text="Select destination folder...")
+        self.dest_entry.pack(fill="x", padx=10, pady=(0, 5))
+
+        ctk.CTkButton(
+            dest_frame,
+            text="Browse",
+            width=100,
+            command=self._select_destination
+        ).pack(anchor="w", padx=10, pady=(0, 10))
+
+        # Duplicates folder
+        ctk.CTkLabel(
+            dest_frame,
+            text="Move duplicates to:",
+            font=ctk.CTkFont(weight="bold")
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+
+        self.dupes_entry = ctk.CTkEntry(dest_frame, placeholder_text="Select duplicates folder...")
+        self.dupes_entry.pack(fill="x", padx=10, pady=(0, 5))
+
+        ctk.CTkButton(
+            dest_frame,
+            text="Browse",
+            width=100,
+            command=self._select_duplicates_folder
+        ).pack(anchor="w", padx=10, pady=(0, 10))
+
+        # Source folders section (expandable) - pack last to fill remaining space
         source_frame = ctk.CTkFrame(tab)
-        source_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
-        source_frame.grid_columnconfigure(0, weight=1)
-        source_frame.grid_rowconfigure(1, weight=1)  # Textbox row expands
+        source_frame.pack(side="top", fill="both", expand=True, pady=(0, 10))
 
         ctk.CTkLabel(
             source_frame,
             text="Folders to scan:",
             font=ctk.CTkFont(weight="bold")
-        ).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 5))
+        ).pack(anchor="w", padx=10, pady=(10, 5))
 
         self.source_list = ctk.CTkTextbox(source_frame)
-        self.source_list.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.source_list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.source_list.configure(state="disabled")
 
         btn_frame = ctk.CTkFrame(source_frame, fg_color="transparent")
-        btn_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         ctk.CTkButton(
             btn_frame,
@@ -152,96 +241,6 @@ class PhotoSifterApp(ctk.CTk):
             fg_color="gray",
             command=self._clear_source_folders
         ).pack(side="left")
-
-        # Destination folder section
-        dest_frame = ctk.CTkFrame(tab)
-        dest_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
-        dest_frame.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(
-            dest_frame,
-            text="Organize files to:",
-            font=ctk.CTkFont(weight="bold")
-        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 5))
-
-        self.dest_entry = ctk.CTkEntry(dest_frame, placeholder_text="Select destination folder...")
-        self.dest_entry.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 5))
-
-        ctk.CTkButton(
-            dest_frame,
-            text="Browse",
-            width=100,
-            command=self._select_destination
-        ).grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
-
-        # Duplicates folder
-        ctk.CTkLabel(
-            dest_frame,
-            text="Move duplicates to:",
-            font=ctk.CTkFont(weight="bold")
-        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 5))
-
-        self.dupes_entry = ctk.CTkEntry(dest_frame, placeholder_text="Select duplicates folder...")
-        self.dupes_entry.grid(row=4, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 5))
-
-        ctk.CTkButton(
-            dest_frame,
-            text="Browse",
-            width=100,
-            command=self._select_duplicates_folder
-        ).grid(row=5, column=0, sticky="w", padx=10, pady=(0, 10))
-
-        # Mode selection frame
-        mode_frame = ctk.CTkFrame(tab)
-        mode_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
-
-        ctk.CTkLabel(
-            mode_frame,
-            text="Scan Mode",
-            font=ctk.CTkFont(weight="bold")
-        ).grid(row=0, column=0, sticky="w", padx=10, pady=(10, 5))
-
-        # Smart mode (default)
-        smart_radio = ctk.CTkRadioButton(
-            mode_frame,
-            text="Smart Mode (recommended)",
-            variable=self.smart_mode_var,
-            value=True
-        )
-        smart_radio.grid(row=1, column=0, sticky="w", padx=20, pady=2)
-
-        ctk.CTkLabel(
-            mode_frame,
-            text="Keep originals in place, move only duplicates to review folder",
-            text_color="gray",
-            font=ctk.CTkFont(size=11)
-        ).grid(row=2, column=0, sticky="w", padx=40, pady=(0, 5))
-
-        # Classic mode
-        classic_radio = ctk.CTkRadioButton(
-            mode_frame,
-            text="Classic Mode",
-            variable=self.smart_mode_var,
-            value=False
-        )
-        classic_radio.grid(row=3, column=0, sticky="w", padx=20, pady=2)
-
-        ctk.CTkLabel(
-            mode_frame,
-            text="Organize all files by date (YYYY/MM) and move duplicates",
-            text_color="gray",
-            font=ctk.CTkFont(size=11)
-        ).grid(row=4, column=0, sticky="w", padx=40, pady=(0, 10))
-
-        # Scan button
-        self.scan_btn = ctk.CTkButton(
-            tab,
-            text="Scan for Duplicates",
-            height=40,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            command=self._start_scan
-        )
-        self.scan_btn.grid(row=3, column=0, pady=20)
 
     def _create_review_tab(self):
         """Create the review tab with duplicate group viewer."""
