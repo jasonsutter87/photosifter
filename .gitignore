@@ -47,3 +47,6 @@ stats.json
 # Build artifacts
 *.exe
 *.app
+
+# Local Netlify folder
+.netlify

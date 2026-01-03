@@ -222,7 +222,7 @@ class PhotoSifterApp(ctk.CTk):
             font=ctk.CTkFont(weight="bold")
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
-        self.source_list = ctk.CTkTextbox(source_frame)
+        self.source_list = ctk.CTkTextbox(source_frame, height=150)
         self.source_list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.source_list.configure(state="disabled")
 
